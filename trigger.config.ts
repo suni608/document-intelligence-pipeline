@@ -1,8 +1,8 @@
 import { defineConfig } from "@trigger.dev/sdk/v3";
 
 export default defineConfig({
-  // Replace this with your actual Trigger.dev project ID / reference from the dashboard
-  project: "document-intelligence-pipeline",
+  // Your actual Trigger.dev project ID from the dashboard
+  project: "proj_hrdjzjfczpetcjmdbbxf",
   runtime: "node",
   logLevel: "log",
   // Tells Trigger.dev to look for files defining background jobs under the /trigger directory
@@ -10,4 +10,5 @@ export default defineConfig({
   // Max duration (in seconds) that any run is allowed to execute for
   maxDuration: 300,
 });
+
 
