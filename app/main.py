@@ -1,4 +1,5 @@
 import json
+import sys
 import time
 from app.utils.json_utils import clean_json_response
 from app.logger import logger
@@ -18,79 +19,84 @@ from app.verification.verifier import verify_extraction
 from app.utils.file_utils import save_json, save_markdown
 
 
+# Default NIST AI RAG standard specification PDF as sample ingestion target
 PDF_URL = "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf"
-
 PDF_PATH = "sample_data/sample.pdf"
 
 
-def main():
+def main() -> None:
+    """
+    Main orchestrator execution workflow. Executes 5 sequential stages:
+      Stage 1: Fetch - Downloads raw target PDF.
+      Stage 2: Ingest/Parse - Converts PDF pages to plaintext stream.
+      Stage 3: Structure - Sends text to LLM (Claude) and validates structure using Pydantic.
+      Stage 4: Publish - Translates data structure into formatted Markdown article.
+      Stage 5: Verify - Performs accuracy verification grading using LLM auditor.
+    """
+    logger.info("=== STARTING DOCUMENT INTELLIGENCE PIPELINE RUN ===")
+    start_time = time.time()
+    
+    try:
+        # --- STAGE 01: FETCH ---
+        logger.info("[STAGE 01] Fetching target source document PDF...")
+        download_pdf(PDF_URL, PDF_PATH)
 
-    logger.info("Downloading PDF...")
+        # --- STAGE 02: PARSE ---
+        logger.info("[STAGE 02] Extracting text content from local PDF file...")
+        raw_text = extract_text(PDF_PATH)
+        if not raw_text.strip():
+            raise ValueError(f"Extracted document text is empty. Ingestion failed for path: {PDF_PATH}")
 
-    download_pdf(PDF_URL, PDF_PATH)
+        # --- STAGE 03: STRUCTURE & SCHEMA VALIDATION ---
+        logger.info("[STAGE 03] Segmenting document text and applying structured schema extraction...")
+        chunks = chunk_text(raw_text)
+        
+        extracted_results = []
+        # In happy-path MVP scope: Process the primary chunk (chunk 0) representing the core document info
+        for index, chunk in enumerate(chunks[:1]):
+            logger.info(f"Processing text chunk index {index} ({len(chunk)} characters)...")
+            prompt = build_prompt(chunk)
+            
+            # API extraction
+            raw_response = extract_structured_data(SYSTEM_PROMPT, prompt)
+            
+            # Sanitization of markdown formatting wrappers from output
+            cleaned_json = clean_json_response(raw_response)
+            parsed_data = json.loads(cleaned_json)
+            
+            # Schema validation using Pydantic BaseModel
+            validated_doc = ExtractedDocument(**parsed_data)
+            extracted_results.append(validated_doc.dict())
+            
+        final_extracted_data = extracted_results[0]
+        
+        # Save validated JSON to workspace
+        save_json(final_extracted_data, "outputs/extracted.json")
+        logger.info("Structured JSON saved successfully to outputs/extracted.json")
 
-    logger.info("Extracting text...")
+        # --- STAGE 04: PUBLISH ---
+        logger.info("[STAGE 04] Translating structured JSON to publication Markdown target...")
+        markdown_content = generate_markdown(ExtractedDocument(**final_extracted_data))
+        save_markdown(markdown_content, "outputs/result.md")
+        logger.info("Markdown publication draft saved to outputs/result.md")
 
-    text = extract_text(PDF_PATH)
-
-    logger.info("Chunking text...")
-
-    chunks = chunk_text(text)
-
-    extracted_results = []
-
-    for chunk in chunks[:1]:
-
-        prompt = build_prompt(chunk)
-
-        response = extract_structured_data(
-            SYSTEM_PROMPT,
-            prompt
+        # --- STAGE 05: VERIFY ---
+        logger.info("[STAGE 05] Initiating self-verification rubric auditor stage...")
+        # Compare first 4000 characters of source text against the extracted output JSON
+        verification_response = verify_extraction(
+            raw_text[:4000],
+            json.dumps(final_extracted_data)
         )
-        time.sleep(15)
-        # parsed = json.loads(response)
-        cleaned_response = clean_json_response(response)
-        parsed = json.loads(cleaned_response)
+        cleaned_verification = clean_json_response(verification_response)
+        save_markdown(cleaned_verification, "outputs/verification.json")
+        logger.info("Self-verification details saved to outputs/verification.json")
 
-        validated = ExtractedDocument(**parsed)
+        total_duration = time.time() - start_time
+        logger.info(f"=== PIPELINE RUN COMPLETED SUCCESSFULY IN {total_duration:.2f} SECONDS ===")
 
-        extracted_results.append(validated.dict())
-
-    final_output = extracted_results[0]
-
-    logger.info("Saving extracted JSON...")
-
-    save_json(
-        final_output,
-        "outputs/extracted.json"
-    )
-
-    logger.info("Generating markdown...")
-
-    markdown = generate_markdown(
-        ExtractedDocument(**final_output)
-    )
-
-    save_markdown(
-        markdown,
-        "outputs/result.md"
-    )
-
-    logger.info("Running verification...")
-
-    verification = verify_extraction(
-        text[:4000],
-        json.dumps(final_output)
-    )
-
-    cleaned_verification = clean_json_response(verification)
-
-    save_markdown(
-        cleaned_verification,
-        "outputs/verification.json"
-    )
-
-    logger.info("Pipeline completed successfully.")
+    except Exception as e:
+        logger.critical(f"Pipeline crashed during execution: {e}", exc_info=True)
+        sys.exit(1)
 
 
 if __name__ == "__main__":
