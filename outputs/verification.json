@@ -1,0 +1,7 @@
+{
+  "accuracy_score": 100,
+  "explanation": "Accuracy: 50/50 - All factual information in the extracted JSON matches the source document precisely. The title, publication date (January 2023), DOI, organizational leadership, versioning system, trustworthiness attributes, core functions, email contact, and update schedule are all accurately represented with no factual errors or mismatches. Completeness: 30/30 - All key facts, dates, and risks from the source document have been captured. The extraction includes the publication details, versioning information, the seven trustworthiness attributes, the four core functions (Govern, Map, Measure, Manage), important dates (January 2023 and 2028), and comprehensive risk categories. No significant omissions are present. No Hallucinations: 20/20 - Every detail in the extracted JSON is directly supported by the source text. There are no invented facts, unsupported claims, or details not present in the source document. The summary accurately paraphrases the content, key points are properly evidenced, and all information is traceable to the source.",
+  "hallucinations": [],
+  "missing_information": [],
+  "confidence": "Very High - The extraction is comprehensive, accurate, and well-evidenced. All major components of the source document have been captured with appropriate detail and supporting evidence."
+}
