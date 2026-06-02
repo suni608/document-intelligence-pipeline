@@ -1,4 +1,5 @@
 import json
+import os
 import sys
 import time
 from app.utils.json_utils import clean_json_response
@@ -19,9 +20,10 @@ from app.verification.verifier import verify_extraction
 from app.utils.file_utils import save_json, save_markdown
 
 
-# Default NIST AI RAG standard specification PDF as sample ingestion target
-PDF_URL = "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf"
+# Load target PDF URL from environment (fallback to standard NIST specification if not set)
+PDF_URL = os.getenv("PDF_URL") or "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf"
 PDF_PATH = "sample_data/sample.pdf"
+
 
 
 def main() -> None:

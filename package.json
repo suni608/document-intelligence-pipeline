@@ -1,0 +1,16 @@
+{
+  "name": "document-intelligence-pipeline",
+  "version": "1.0.0",
+  "description": "Trigger.dev orchestrator for Document Intelligence Pipeline MVP",
+  "main": "index.js",
+  "scripts": {
+    "trigger:dev": "npx trigger.dev@latest dev"
+  },
+  "dependencies": {
+    "@trigger.dev/sdk": "^3.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "@types/node": "^20.11.24"
+  }
+}
