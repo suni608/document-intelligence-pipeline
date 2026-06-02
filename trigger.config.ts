@@ -7,4 +7,7 @@ export default defineConfig({
   logLevel: "log",
   // Tells Trigger.dev to look for files defining background jobs under the /trigger directory
   dirs: ["trigger"],
+  // Max duration (in seconds) that any run is allowed to execute for
+  maxDuration: 300,
 });
+
