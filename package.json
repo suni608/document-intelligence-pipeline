@@ -7,7 +7,7 @@
     "trigger:dev": "npx trigger.dev@latest dev"
   },
   "dependencies": {
-    "@trigger.dev/sdk": "^3.0.0"
+    "@trigger.dev/sdk": "4.4.6"
   },
   "devDependencies": {
     "typescript": "^5.3.3",
