@@ -47,7 +47,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     res.end(
       JSON.stringify({
         runId: run.id,
-        dashboardUrl: `https://dashboard.trigger.dev/runs/${run.id}`
+        dashboardUrl: `https://cloud.trigger.dev/runs/${run.id}`
       })
     );
   } catch (error: any) {
