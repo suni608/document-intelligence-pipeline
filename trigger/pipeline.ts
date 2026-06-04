@@ -1,6 +1,7 @@
 import { task } from "@trigger.dev/sdk/v3";
 import { exec } from "child_process";
 import path from "path";
+import fs from "fs";
 
 // Define schema interface for the incoming trigger payload
 interface ProcessDocumentPayload {
@@ -44,10 +45,31 @@ export const processDocumentPipeline = task({
           return;
         }
         
-        console.log("Subprocess run completed successfully.");
+        console.log("Subprocess run completed successfully. Loading generated output JSON files...");
+        
+        // Define paths to output files
+        const extractedPath = path.resolve(process.cwd(), "outputs", "extracted.json");
+        const verificationPath = path.resolve(process.cwd(), "outputs", "verification.json");
+        
+        let extractedData = null;
+        let verificationData = null;
+
+        // Read output files to return them in Trigger.dev dashboard
+        try {
+          if (fs.existsSync(extractedPath)) {
+            extractedData = JSON.parse(fs.readFileSync(extractedPath, "utf-8"));
+          }
+          if (fs.existsSync(verificationPath)) {
+            verificationData = JSON.parse(fs.readFileSync(verificationPath, "utf-8"));
+          }
+        } catch (readError) {
+          console.error("Failed to parse output JSON files:", readError);
+        }
+
         resolve({
           status: "success",
-          stdout: stdout.trim(),
+          extractedData: extractedData,
+          verificationData: verificationData,
           stderr: stderr.trim()
         });
       });
