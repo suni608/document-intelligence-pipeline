@@ -4,4 +4,6 @@ __pycache__/
 node_modules/
 dist/
 .trigger/
+docs/loom_walkthrough_script.md
+
 
