@@ -11,55 +11,7 @@ This project is an end-to-end Python pipeline that downloads a PDF, extracts its
 
 Here is a simple diagram showing the 5 stages of the pipeline and the tools used:
 
-```text
-========================================================================================
-                               DOCUMENT INTELLIGENCE PIPELINE
-========================================================================================
-
-    [1. Ingestion Phase]
-    PDF URL Source
-          │
-          ▼ (Stage 1: Fetch)
-    [requests.get] ───► Write PDF ───► [(sample_data/sample.pdf)]
-                                                    │
-                                                    ▼ (Stage 2: Parse)
-    PlainText Stream ◄─── Extract text ◄─── [PyMuPDF parser]
-
-────────────────────────────────────────────────────────────────────────────────────────
-
-    [2. Extraction & Validation Phase]
-    [PlainText Stream]
-          │
-          ▼ (Split into chunks)
-    [4000-char chunks]
-          │
-          ▼ (Stage 3: Structure)
-    [Claude 3.5 Messages API] ◄─── Enforce Pydantic Schema: [ExtractedDocument]
-          │
-          ├───► Success ───► Validate & Save ───► [(outputs/extracted.json)]
-          │
-          └───► Failure ───► Raise ValidationError ───► [API Retries & Error Logging]
-
-────────────────────────────────────────────────────────────────────────────────────────
-
-    [3. Publishing & Verification Phase]
-    [(outputs/extracted.json)]
-          │
-          ├───► (Stage 4: Publish) ───► [Markdown Publisher] ───► [(outputs/result.md)]
-          │
-          └───► (Stage 5: Verify)  ───┐
-                                      ▼
-    [PlainText Stream] ────────► [LLM Rubric Auditor] ───► [(outputs/verification.json)]
-                                 (Accuracy, Completeness, Hallucinations)
-
-========================================================================================
-                             CROSS-CUTTING PRODUCTION LAYERS
-========================================================================================
-  * Secrets Management : Infisical CLI Vault (injects ANTHROPIC_API_KEY)
-  * Logging & Auditing : Structured JSON Logs (sys.stdout / stderr)
-  * Orchestrator Run   : Vercel Web UI (dispatch) + Trigger.dev Cloud (job queue)
-========================================================================================
-```
+![Pipeline Architecture](docs/architecture.png)
 
 ---
 
