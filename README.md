@@ -11,51 +11,40 @@ This project is an end-to-end Python pipeline that downloads a PDF, extracts its
 
 Here is a simple diagram showing the 5 stages of the pipeline and the tools used:
 
-```mermaid
-flowchart TD
-    %% Define Styles
-    classDef stageStyle fill:#1e293b,stroke:#38bdf8,stroke-width:2px,color:#f8fafc;
-    classDef crossStyle fill:#334155,stroke:#94a3b8,stroke-dasharray: 5 5,color:#cbd5e1;
-    classDef dataStyle fill:#0f172a,stroke:#22c55e,stroke-width:2px,color:#22c55e;
-    
-    %% Ingestion Pipeline
-    subgraph Ingestion["1. Ingestion Phase"]
-        A[PDF URL Source] -->|Stage 1: Fetch| B[requests.get]
-        B -->|Write PDF| C[(sample_data/sample.pdf)]
-        C -->|Stage 2: Parse| D[PyMuPDF parser]
-        D -->|Extract text stream| E[PlainText Stream]
-    end
+```text
+[PDF URL Source]
+       │
+       ▼
+┌─────────────────────────────┐
+│    Stage 1: Fetch PDF       │  <-- Ingests raw PDF (requests)
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│    Stage 2: Parse PDF       │  <-- Extracts plain text stream (PyMuPDF)
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│    Stage 3: Structure Data  │  <-- Structured JSON & Pydantic Validation
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│    Stage 4: Publish MD      │  <-- Formats result.md article draft
+└──────────────┬──────────────┘
+               │
+               ▼
+┌─────────────────────────────┐
+│    Stage 5: Verify Audit    │  <-- Self-honesty score (verification.json)
+└─────────────────────────────┘
 
-    %% Extraction & Validation
-    subgraph Core["2. Extraction & Validation Phase"]
-        E -->|Text Chunking| F[4000-char chunks]
-        F -->|Stage 3: Structure| G[Claude 3.5 Messages API]
-        H[Pydantic Schema: ExtractedDocument] -->|Enforce structure| I{Validation Pass}
-        G -->|Raw JSON Response| I
-        I -->|Success: Validate & Parse| J[(outputs/extracted.json)]
-        I -->|Failure: Raise ValidationException| K[API Error Handling & Retries]
-    end
-
-    %% Publishing & Verification
-    subgraph Outputs["3. Publishing & Verification Phase"]
-        J -->|Stage 4: Publish| L[Markdown Publisher]
-        L -->|Write Article| M[(outputs/result.md)]
-        
-        J & E -->|Stage 5: Verify| N[LLM Rubric Auditor]
-        N -->|Accuracy, Completeness, Hallucinations| O[(outputs/verification.json)]
-    end
-
-    %% Cross-Cutting Concerns
-    subgraph CrossCutting["Cross-Cutting Production Layers"]
-        P[Secrets: Infisical Vault / CLI] -.->|Injects ANTHROPIC_API_KEY| G & N
-        Q[Logging: Structured JSON Logs] -.->|Audit trails & Metrics| Main[Python CLI Orchestrator]
-        R[Orchestration options: n8n / Trigger.dev] -.->|Run schedule / webhook| Main
-    end
-
-    %% Apply Styles
-    class B,D,G,L,N stageStyle;
-    class P,Q,R,Main crossStyle;
-    class C,J,M,O,E dataStyle;
+====================================================================
+Cross-Cutting Layers:
+- Secrets Manager: Infisical CLI (for ANTHROPIC_API_KEY)
+- Logging & Audit: Structured JSON Logs
+- Orchestration: Vercel Web UI (trigger) + Trigger.dev Cloud (queue)
+====================================================================
 ```
 
 ---
