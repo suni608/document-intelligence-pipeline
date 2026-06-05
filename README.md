@@ -2,6 +2,9 @@
 
 This project is an end-to-end Python pipeline that downloads a PDF, extracts its text, parses structured information using Claude 3.5, validates the structure using Pydantic, and evaluates the final extraction using a self-verification audit.
 
+* **Live Web App**: [https://document-intelligence-pipeline.vercel.app](https://document-intelligence-pipeline.vercel.app)
+* **Production Orchestrator**: [https://cloud.trigger.dev](https://cloud.trigger.dev)
+
 ---
 
 ## 🛠️ How It Works (Pipeline Architecture)
@@ -120,6 +123,27 @@ If you want to trigger the pipeline from your web browser instead of using a ter
 3. Wait until you see `○ Local worker ready` in the terminal.
 4. Open the web browser link displayed in your terminal to open the Trigger.dev dashboard.
 5. In another browser tab, open your Vercel URL, paste a PDF URL, and click **Trigger Pipeline Run**. You can monitor the job executing live from the dashboard, and view the final JSON extraction inside the dashboard **Output** panel!
+
+---
+
+## 🔑 Secret Key Management
+
+To maintain high production standards, this project strictly avoids committing API keys or environment variables directly to code. The required keys and their environments are outlined below.
+
+### Required Secrets
+1. **`ANTHROPIC_API_KEY`**: 
+   * **Purpose**: Used by the Python backend script to query Claude 3.5 for structured extraction and audit verification.
+   * **Provider**: Retrieve this from the [Anthropic Console](https://console.anthropic.com/).
+2. **`TRIGGER_SECRET_KEY`**: 
+   * **Purpose**: Used by the Vercel serverless dispatch function (`api/trigger.ts`) to securely communicate with the Trigger.dev Cloud API.
+   * **Provider**: Retrieve this from your [Trigger.dev Dashboard](https://cloud.trigger.dev/) under *API Keys*.
+
+### Setup & Configurations
+Secrets are mapped across three environments to maintain security isolation:
+
+* **Local Python CLI execution**: Injected dynamically at runtime using the **Infisical CLI** (`infisical run`). This pulls the latest variables directly from your Infisical vault into the terminal session.
+* **Vercel Serverless Deployment**: Configured via the Vercel Project Settings under *Environment Variables* (`TRIGGER_SECRET_KEY`).
+* **Trigger.dev Task Worker**: Configured via the Trigger.dev Dashboard settings under *Environment Variables* (`ANTHROPIC_API_KEY`).
 
 ---
 
