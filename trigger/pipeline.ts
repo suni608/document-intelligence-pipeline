@@ -58,11 +58,17 @@ export const processDocumentPipeline = task({
         console.log(`Processing URL target: ${executionEnv.PDF_URL}`);
       }
 
-      // Spawns the CLI execution under Infisical to securely retrieve API keys at runtime
-      const child = spawn(infisicalBin, ["run", "--", pythonPath, "-m", "app.main"], {
-        env: executionEnv,
-        shell: true
-      });
+      // Determine if we should bypass Infisical (e.g. if ANTHROPIC_API_KEY is already present in execution environment)
+      const hasApiKey = !!executionEnv.ANTHROPIC_API_KEY || !!executionEnv.ANTHROPIC_API_KEY; // checks both cases
+
+      console.log(hasApiKey 
+        ? "ANTHROPIC_API_KEY detected in environment. Running python script directly (bypassing Infisical)..."
+        : "No ANTHROPIC_API_KEY in environment. Spawning under Infisical to retrieve keys..."
+      );
+
+      const child = hasApiKey
+        ? spawn(pythonPath, ["-m", "app.main"], { env: executionEnv, shell: true })
+        : spawn(infisicalBin, ["run", "--", pythonPath, "-m", "app.main"], { env: executionEnv, shell: true });
 
       let stdoutData = "";
       let stderrData = "";
