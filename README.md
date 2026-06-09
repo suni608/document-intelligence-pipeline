@@ -1,6 +1,6 @@
 # 📄 Document Intelligence Pipeline MVP
 
-This project is an end-to-end Python pipeline that downloads a PDF, extracts its text, parses structured information using Claude 3.5, validates the structure using Pydantic, and evaluates the final extraction using a self-verification audit.
+This project is an end-to-end Python-based document intelligence pipeline that ingests a PDF document, extracts structured metadata/risks/claims using Claude 3.5, validates the structure using Pydantic, translates it to a publication-ready Markdown article, and runs a self-verification audit.
 
 * **Live Web App**: [https://document-intelligence-pipeline.vercel.app](https://document-intelligence-pipeline.vercel.app)
 * **Production Orchestrator**: [https://cloud.trigger.dev](https://cloud.trigger.dev)
@@ -9,15 +9,22 @@ This project is an end-to-end Python pipeline that downloads a PDF, extracts its
 
 ## 🛠️ How It Works (Pipeline Architecture)
 
-Here is a simple diagram showing the 5 stages of the pipeline and the tools used:
+Here is a diagram showing the 5 stages of the pipeline and the tools used:
 
 ![Pipeline Architecture](docs/architecture.png)
+
+### The 5 Execution Stages:
+1. **Stage 1 (Fetch & Ingest)**: Downloads the PDF from a public URL or processes a local PDF upload.
+2. **Stage 2 (Parse)**: Extracts layout-aware plaintext from the PDF using PyMuPDF.
+3. **Stage 3 (Structure)**: Segments text and queries Claude to extract a structured JSON format, validating the output with **Pydantic v2**.
+4. **Stage 4 (Publish)**: Translates the structured JSON into a publication-ready Markdown page.
+5. **Stage 5 (Verify)**: Performs a self-verification audit comparison against the source text using an LLM auditor, giving an accuracy score out of 100.
 
 ---
 
 ## 🚀 How to Set Up and Run Locally
 
-Follow these simple steps to run the pipeline on your computer.
+Follow these steps to run the pipeline on your computer.
 
 ### 1. Prerequisites
 * **Python**: You must have Python `3.10` or newer installed.
@@ -59,13 +66,13 @@ Run the script using the Infisical CLI to inject the `ANTHROPIC_API_KEY` environ
 Once finished, check the generated files inside the `/outputs` folder:
 * **[outputs/extracted.json](file:///outputs/extracted.json)**: The structured data extracted from the PDF.
 * **[outputs/result.md](file:///outputs/result.md)**: The summary page formatted as Markdown.
-* **[outputs/verification.json](file:///outputs/verification.json)**: The self-verification audit report with the accuracy score.
+* **[outputs/verification.json](file:///outputs/verification.json)**: The self-verification audit report.
 
 ---
 
-## 🏃 Running the Trigger.dev Web UI Demo (Optional)
+## 🏃 Running the Web UI Demo Locally
 
-If you want to trigger the pipeline from your web browser instead of using a terminal command:
+If you want to trigger the pipeline from your web browser:
 
 1. Install the Node.js dependencies:
    ```bash
@@ -75,39 +82,33 @@ If you want to trigger the pipeline from your web browser instead of using a ter
    ```bash
    npm run trigger:dev
    ```
-3. Wait until you see `○ Local worker ready` in the terminal.
-4. Open the web browser link displayed in your terminal to open the Trigger.dev dashboard.
-5. In another browser tab, open your Vercel URL, paste a PDF URL, and click **Trigger Pipeline Run**. You can monitor the job executing live from the dashboard, and view the final JSON extraction inside the dashboard **Output** panel!
+3. Open the web browser link displayed in your terminal to open the Trigger.dev dashboard.
+4. Run the frontend locally (or deploy to Vercel). Paste a PDF URL or upload a local PDF file under 4MB, then click **Trigger Pipeline Run**. The UI polls `/api/status` to show a real-time progress tracker and display the output directly on the webpage!
 
 ---
 
-## 🔑 Secret Key Management
+## 🔑 Secret Key Management (Infisical Vault)
 
-To maintain high production standards, this project strictly avoids committing API keys or environment variables directly to code. The required keys and their environments are outlined below.
+To maintain enterprise security standards, this project strictly avoids committing API keys or environment variables directly to code.
 
-### Required Secrets
-1. **`ANTHROPIC_API_KEY`**: 
-   * **Purpose**: Used by the Python backend script to query Claude 3.5 for structured extraction and audit verification.
-   * **Provider**: Retrieve this from the [Anthropic Console](https://console.anthropic.com/).
-2. **`TRIGGER_SECRET_KEY`**: 
-   * **Purpose**: Used by the Vercel serverless dispatch function (`api/trigger.ts`) to securely communicate with the Trigger.dev Cloud API.
-   * **Provider**: Retrieve this from your [Trigger.dev Dashboard](https://cloud.trigger.dev/) under *API Keys*.
-
-### Setup & Configurations
-Secrets are mapped across three environments to maintain security isolation:
-
-* **Local Python CLI execution**: Injected dynamically at runtime using the **Infisical CLI** (`infisical run`). This pulls the latest variables directly from your Infisical vault into the terminal session.
-* **Vercel Serverless Deployment**: Configured via the Vercel Project Settings under *Environment Variables* (`TRIGGER_SECRET_KEY`).
-* **Trigger.dev Task Worker**: Configured via the Trigger.dev Dashboard settings under *Environment Variables* (`ANTHROPIC_API_KEY`).
+* **Local Python execution**: Secrets are injected dynamically at runtime using the **Infisical CLI** (`infisical run`). This pulls the latest variables directly from your Infisical vault into the terminal session memory, leaving no keys on the disk.
+* **Vercel Serverless Function**: Configured via Vercel Project Settings (`TRIGGER_SECRET_KEY`).
+* **Trigger.dev Task Worker**: Configured via the Trigger.dev Dashboard Settings (`ANTHROPIC_API_KEY`).
 
 ---
 
-## 💡 Key Architectural Details
+## 🤖 LLM Configurations & AI Flow
 
-### Stage 03: Pydantic Schema Validation
-LLMs are probabilistic and can sometimes return malformed JSON or miss fields.
-We use **Pydantic v2** (`ExtractedDocument` in [schema.py](file:///app/extraction/schema.py)) to parse and validate Claude's outputs at runtime. If Claude's response is missing a required key or returns a wrong type, Pydantic immediately raises a `ValidationError` to prevent broken data from saving.
+### Model & Parameters:
+* **Model**: `claude-haiku-4-5-20251001` (or `claude-3-5-sonnet-20241022`)
+* **Temperature**: `0` (Enforces strict determinism for exact facts extraction)
+* **Max Tokens**: `4000` (Stage 3 Extraction), `2000` (Stage 5 Verification)
 
-### Orchestration Choice: Trigger.dev vs. n8n
-* **n8n**: A visual, drag-and-drop workflow tool. While n8n is great for simple connections, it is harder to review in Git and is not suited for complex Python logic like PDF parsing or Pydantic validation.
-* **Trigger.dev**: A code-first background task runner. Because it is written in TypeScript, it lives inside our Git repository, supports type safety, handles long-running jobs (solving Vercel's 10-second serverless timeout limit), and integrates seamlessly with our Python scripts.
+### Pydantic Validation:
+In Stage 3, we define the schema as a Pydantic model (`ExtractedDocument` in [schema.py](file:///app/extraction/schema.py)). When the LLM returns a response, the backend instantiates the model `ExtractedDocument(**json.loads(response))`. If Claude returns a wrong type or misses a required field, Pydantic throws a `ValidationError` immediately to avoid passing corrupt data downstream.
+
+### Self-Verification Auditor Rubric:
+In Stage 5, the auditor compares the extracted claims against the first 4000 characters of the raw source text. It grades the extraction out of 100 based on three items:
+* **Accuracy (50 pts)**: Penalizes points if the extracted evidence quotes are not found verbatim in the source text.
+* **Completeness (30 pts)**: Checks if dates, contact details, and risks are correctly cataloged.
+* **No Hallucinations (20 pts)**: Checks if the model extracted headers from the Table of Contents that do not exist in the processed text.

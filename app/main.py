@@ -21,6 +21,7 @@ from app.utils.file_utils import save_json, save_markdown
 
 
 # Load target PDF URL from environment (fallback to standard NIST specification if not set)
+PDF_LOCAL_PATH = os.getenv("PDF_LOCAL_PATH")
 PDF_URL = os.getenv("PDF_URL") or "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf"
 PDF_PATH = "sample_data/sample.pdf"
 
@@ -40,8 +41,14 @@ def main() -> None:
     
     try:
         # --- STAGE 01: FETCH ---
-        logger.info("[STAGE 01] Fetching target source document PDF...")
-        download_pdf(PDF_URL, PDF_PATH)
+        if PDF_LOCAL_PATH and os.path.exists(PDF_LOCAL_PATH):
+            logger.info(f"[STAGE 01] Using locally uploaded PDF from path: {PDF_LOCAL_PATH} (skipping download)")
+            import shutil
+            os.makedirs(os.path.dirname(PDF_PATH), exist_ok=True)
+            shutil.copy(PDF_LOCAL_PATH, PDF_PATH)
+        else:
+            logger.info("[STAGE 01] Fetching target source document PDF...")
+            download_pdf(PDF_URL, PDF_PATH)
 
         # --- STAGE 02: PARSE ---
         logger.info("[STAGE 02] Extracting text content from local PDF file...")

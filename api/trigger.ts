@@ -35,12 +35,20 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   try {
     const body = await readBody(req);
     const pdfUrl = body.pdfUrl;
+    const pdfBase64 = body.pdfBase64;
+    const filename = body.filename;
 
-    console.log(`Dispatched trigger payload target: ${pdfUrl}`);
+    if (pdfBase64) {
+      console.log(`Dispatched trigger payload target: Local Upload (${filename})`);
+    } else {
+      console.log(`Dispatched trigger payload target: ${pdfUrl}`);
+    }
 
     // Dispatches task execution to Trigger.dev Cloud using the tasks service client
     const run = await tasks.trigger("process-document-pipeline", {
-      pdfUrl
+      pdfUrl,
+      pdfBase64,
+      filename
     });
 
     res.statusCode = 200;
