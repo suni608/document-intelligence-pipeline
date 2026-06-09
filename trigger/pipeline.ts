@@ -86,8 +86,8 @@ export const processDocumentPipeline = task({
         console.log(`Processing URL target: ${executionEnv.PDF_URL}`);
       }
 
-      // Determine if we should bypass Infisical (e.g. if ANTHROPIC_API_KEY is already present in execution environment)
-      const hasApiKey = !!executionEnv.ANTHROPIC_API_KEY || !!executionEnv.ANTHROPIC_API_KEY; // checks both cases
+      // Determine if we should bypass Infisical (e.g. if ANTHROPIC_API_KEY is already present in environment)
+      const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
 
       console.log(hasApiKey 
         ? "ANTHROPIC_API_KEY detected in environment. Running python script directly (bypassing Infisical)..."

@@ -1305,27 +1305,54 @@
         document.getElementById('markdownContent').innerText = markdown || "# No Markdown generated.";
 
         // Tab 4: Audit
-        const score = verification.score || 0;
+        let score = 0;
+        let accuracyScore = 0;
+        let completenessScore = 0;
+        let noHallucinationsScore = 0;
+
+        if (typeof verification.score === 'number') {
+            score = verification.score;
+            accuracyScore = verification.accuracy_score || 0;
+            completenessScore = verification.completeness_score || 0;
+            noHallucinationsScore = verification.no_hallucinations_score || 0;
+        } else if (typeof verification.accuracy_score === 'number') {
+            // Fallback for old/alternative format where accuracy_score was the overall score out of 100
+            score = verification.accuracy_score;
+            // Distribute it proportionally across the 50/30/20 rubric slots for visual feedback
+            accuracyScore = Math.min(50, Math.round(score * 0.5));
+            completenessScore = Math.min(30, Math.round(score * 0.3));
+            noHallucinationsScore = Math.min(20, Math.round(score * 0.2));
+        }
+
         const scoreCircle = document.getElementById('auditScoreCircle');
         scoreCircle.style.setProperty('--score-percent', score);
         document.getElementById('auditScoreVal').innerText = `${score}/100`;
 
         const scoreLabel = document.getElementById('auditScoreLabel');
-        if (score >= 90) {
-            scoreLabel.innerText = 'EXCELLENT';
+        if (score >= 95) {
+            scoreLabel.innerText = 'All facts supported by source';
             scoreLabel.style.color = 'var(--success)';
-        } else if (score >= 70) {
-            scoreLabel.innerText = 'GOOD / VALIDATED';
+        } else if (score >= 80) {
+            scoreLabel.innerText = 'Minor omissions';
+            scoreLabel.style.color = 'var(--success)';
+        } else if (score >= 60) {
+            scoreLabel.innerText = 'Some unsupported facts';
             scoreLabel.style.color = 'var(--warning)';
+        } else if (score >= 40) {
+            scoreLabel.innerText = 'Multiple unsupported facts';
+            scoreLabel.style.color = 'var(--warning)';
+        } else if (score >= 20) {
+            scoreLabel.innerText = 'Mostly hallucinated';
+            scoreLabel.style.color = 'var(--error)';
         } else {
-            scoreLabel.innerText = 'POOR AUDIT';
+            scoreLabel.innerText = 'Completely incorrect';
             scoreLabel.style.color = 'var(--error)';
         }
 
-        document.getElementById('scoreAccuracy').innerText = `${verification.accuracy_score || 0} / 50`;
-        document.getElementById('scoreCompleteness').innerText = `${verification.completeness_score || 0} / 30`;
-        document.getElementById('scoreHallucinations').innerText = `${verification.no_hallucinations_score || 0} / 20`;
-        document.getElementById('auditAssessment').innerText = verification.assessment || "No detailed assessment provided.";
+        document.getElementById('scoreAccuracy').innerText = `${accuracyScore} / 50`;
+        document.getElementById('scoreCompleteness').innerText = `${completenessScore} / 30`;
+        document.getElementById('scoreHallucinations').innerText = `${noHallucinationsScore} / 20`;
+        document.getElementById('auditAssessment').innerText = verification.assessment || verification.explanation || "No detailed assessment provided.";
 
         // Deductions
         const deductionsContainer = document.getElementById('auditDeductions');
