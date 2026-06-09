@@ -1358,7 +1358,11 @@
             }
         }
 
-        showError(`Pipeline execution failed: ${error}`);
+        let errorMsg = error;
+        if (error && typeof error === 'object') {
+            errorMsg = error.message || JSON.stringify(error);
+        }
+        showError(`Pipeline execution failed: ${errorMsg}`);
     }
 
     function switchTab(tabId) {
