@@ -10,6 +10,31 @@ interface ProcessDocumentPayload {
   filename?: string;
 }
 
+// Helper to manually load .env file if it exists (avoids extra dependency imports)
+function loadEnv() {
+  try {
+    const envPath = path.resolve(process.cwd(), ".env");
+    if (fs.existsSync(envPath)) {
+      const content = fs.readFileSync(envPath, "utf-8");
+      for (const line of content.split("\n")) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith("#")) continue;
+        const index = trimmed.indexOf("=");
+        if (index > 0) {
+          const key = trimmed.substring(0, index).trim();
+          let val = trimmed.substring(index + 1).trim();
+          if ((val.startsWith('"') && val.endsWith('"')) || (val.startsWith("'") && val.endsWith("'"))) {
+            val = val.substring(1, val.length - 1);
+          }
+          process.env[key] = val;
+        }
+      }
+    }
+  } catch (err) {
+    console.error("Failed to load .env file:", err);
+  }
+}
+
 /**
  * Trigger.dev Background Job.
  * Ingests a payload containing either a custom pdfUrl or pdfBase64, configures env,
@@ -19,6 +44,9 @@ export const processDocumentPipeline = task({
   id: "process-document-pipeline",
   run: async (payload: ProcessDocumentPayload, { ctx }) => {
     console.log("Trigger.dev Job process-document-pipeline started.");
+    
+    // Load local environment variables from .env file
+    loadEnv();
     
     // Set initial progress metadata state
     metadata.set("progress", { stage: 0, message: "Pipeline initialized. Starting job..." });
