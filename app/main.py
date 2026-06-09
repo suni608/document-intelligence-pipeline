@@ -55,6 +55,11 @@ def main() -> None:
         raw_text = extract_text(PDF_PATH)
         if not raw_text.strip():
             raise ValueError(f"Extracted document text is empty. Ingestion failed for path: {PDF_PATH}")
+        
+        # Save raw text to outputs/raw_text.txt for chatbot context
+        os.makedirs("outputs", exist_ok=True)
+        with open("outputs/raw_text.txt", "w", encoding="utf-8") as f:
+            f.write(raw_text)
 
         # --- STAGE 03: STRUCTURE & SCHEMA VALIDATION ---
         logger.info("[STAGE 03] Segmenting document text and applying structured schema extraction...")

@@ -152,10 +152,12 @@ export const processDocumentPipeline = task({
         const extractedPath = path.resolve(process.cwd(), "outputs", "extracted.json");
         const verificationPath = path.resolve(process.cwd(), "outputs", "verification.json");
         const markdownPath = path.resolve(process.cwd(), "outputs", "result.md");
+        const rawTextPath = path.resolve(process.cwd(), "outputs", "raw_text.txt");
         
         let extractedData = null;
         let verificationData = null;
         let markdownData = "";
+        let rawTextData = "";
 
         // Read output files to return them in Trigger.dev dashboard and API
         try {
@@ -168,6 +170,9 @@ export const processDocumentPipeline = task({
           if (fs.existsSync(markdownPath)) {
             markdownData = fs.readFileSync(markdownPath, "utf-8");
           }
+          if (fs.existsSync(rawTextPath)) {
+            rawTextData = fs.readFileSync(rawTextPath, "utf-8");
+          }
         } catch (readError) {
           console.error("Failed to parse output JSON/Markdown files:", readError);
         }
@@ -176,7 +181,8 @@ export const processDocumentPipeline = task({
           status: "success",
           extractedData: extractedData,
           verificationData: verificationData,
-          markdownData: markdownData
+          markdownData: markdownData,
+          rawTextData: rawTextData
         });
       });
     });

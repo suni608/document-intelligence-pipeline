@@ -877,6 +877,7 @@
             <button class="tab-btn" onclick="switchTab('tabClaims')">Claims & Evidence</button>
             <button class="tab-btn" onclick="switchTab('tabMarkdown')">Formatted Markdown</button>
             <button class="tab-btn" onclick="switchTab('tabAudit')">Self-Audit Verification</button>
+            <button class="tab-btn" onclick="switchTab('tabChat')">Document Q&A Chatbot</button>
             <button class="tab-btn" onclick="switchTab('tabConfig')">AI & Security Info</button>
         </div>
 
@@ -967,7 +968,23 @@
             </div>
         </div>
 
-        <!-- Tab 5: Config -->
+        <!-- Tab 5: Chatbot -->
+        <div id="tabChat" class="tab-pane">
+            <div style="display: flex; flex-direction: column; gap: 16px;">
+                <p style="margin-bottom: 0px; color: var(--text-muted); font-size: 14px;">Ask any question about the processed document. Claude will answer based strictly on the extracted text.</p>
+                <div id="chatHistory" style="background: rgba(3, 7, 18, 0.6); border: 1px solid var(--card-border); border-radius: 12px; padding: 20px; height: 300px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; box-sizing: border-box;">
+                    <div style="color: var(--text-muted); font-size: 14px; text-align: center; margin-top: auto; margin-bottom: auto;">
+                        Chatbot initialized. Type a question below to start.
+                    </div>
+                </div>
+                <form id="chatForm" style="display: flex; gap: 10px;" onsubmit="sendChatQuestion(event)">
+                    <input type="text" id="chatInput" placeholder="e.g. What is the main finding? or Who is the publisher?" required style="margin-bottom: 0px; flex: 1;">
+                    <button type="submit" id="chatSendBtn" class="submit-btn" style="width: auto; padding: 14px 24px; margin-top: 0px; box-shadow: none;">Send</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Tab 6: Config -->
         <div id="tabConfig" class="tab-pane">
             <div class="config-grid">
                 <div class="config-card">
@@ -1001,6 +1018,7 @@
     let selectedFileBase64 = '';
     let selectedFileName = '';
     let pollingInterval = null;
+    let currentRawText = '';
 
     // Drag and drop event listeners
     const dropzone = document.getElementById('dropzone');
@@ -1258,6 +1276,14 @@
         const extracted = output.extractedData;
         const verification = output.verificationData;
         const markdown = output.markdownData;
+        
+        // Save raw text for chatbot context
+        currentRawText = output.rawTextData || '';
+        // Reset chatbot conversation history
+        const chatHistory = document.getElementById('chatHistory');
+        if (chatHistory) {
+            chatHistory.innerHTML = '<div style="color: var(--text-muted); font-size: 14px; text-align: center; margin-top: auto; margin-bottom: auto;">Chatbot initialized. Type a question below to start.</div>';
+        }
 
         // Tab 1: Summary
         document.getElementById('docTitle').innerText = extracted.title || "Extracted Title";
@@ -1418,6 +1444,72 @@
                 copyBtn.innerText = 'Copy Code';
             }, 2000);
         });
+    }
+
+    async function sendChatQuestion(e) {
+        e.preventDefault();
+        const chatInput = document.getElementById('chatInput');
+        const chatHistory = document.getElementById('chatHistory');
+        const chatSendBtn = document.getElementById('chatSendBtn');
+        
+        const question = chatInput.value.trim();
+        if (!question || !currentRawText) return;
+
+        // Disable inputs
+        chatInput.disabled = true;
+        chatSendBtn.disabled = true;
+        chatSendBtn.innerText = 'Thinking...';
+
+        // Remove welcome message if present
+        if (chatHistory.querySelector('div') && chatHistory.querySelector('div').innerText.includes('Chatbot initialized')) {
+            chatHistory.innerHTML = '';
+        }
+
+        // Append user message
+        chatHistory.innerHTML += `
+            <div style="align-self: flex-end; background: var(--accent-primary); color: white; padding: 10px 14px; border-radius: 12px 12px 0px 12px; max-width: 80%; font-size: 14px; line-height: 1.4; word-break: break-word;">
+                ${question}
+            </div>
+        `;
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+        chatInput.value = '';
+
+        try {
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ question, context: currentRawText })
+            });
+
+            const data = await response.json();
+            
+            if (response.ok) {
+                // Append bot message
+                chatHistory.innerHTML += `
+                    <div style="align-self: flex-start; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--card-border); color: var(--text-main); padding: 10px 14px; border-radius: 12px 12px 12px 0px; max-width: 80%; font-size: 14px; line-height: 1.4; word-break: break-word;">
+                        ${data.answer}
+                    </div>
+                `;
+            } else {
+                chatHistory.innerHTML += `
+                    <div style="align-self: flex-start; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #fca5a5; padding: 10px 14px; border-radius: 12px; max-width: 80%; font-size: 14px; word-break: break-word;">
+                        Error: ${data.message || 'Failed to get answer'}
+                    </div>
+                `;
+            }
+        } catch (err) {
+            chatHistory.innerHTML += `
+                <div style="align-self: flex-start; background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #fca5a5; padding: 10px 14px; border-radius: 12px; max-width: 80%; font-size: 14px; word-break: break-word;">
+                    Connection failed: ${err.message}
+                </div>
+            `;
+        } finally {
+            chatInput.disabled = false;
+            chatSendBtn.disabled = false;
+            chatSendBtn.innerText = 'Send';
+            chatHistory.scrollTop = chatHistory.scrollHeight;
+            chatInput.focus();
+        }
     }
 </script>
 
