@@ -59,7 +59,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         "content-type": "application/json",
       },
       body: JSON.stringify({
-        model: "claude-3-5-sonnet-20241022",
+        model: "claude-haiku-4-5-20251001",
         max_tokens: 800,
         temperature: 0.2,
         system: "You are a precise, helpful assistant. Answer the user's question about the provided document. Rely ONLY on the text inside <DocumentContext> tags. If you cannot find the answer to the question in the document, say: 'I cannot find the answer to this question in the provided document.' Do not make up facts or extrapolate beyond the text.",
