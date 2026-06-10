@@ -2,7 +2,7 @@
 
 This project is an end-to-end Python-based document intelligence pipeline that ingests a PDF document, extracts structured metadata/risks/claims using Claude 3.5, validates the structure using Pydantic, translates it to a publication-ready Markdown article, and runs a self-verification audit.
 
-* **Live Web App**: [https://document-intelligence-pipeline.vercel.app](https://document-intelligence-pipeline.vercel.app)
+* **Live Web App**: https://document-intelligence-pipeline-eosin.vercel.app/
 * **Production Orchestrator**: [https://cloud.trigger.dev](https://cloud.trigger.dev)
 
 ---
