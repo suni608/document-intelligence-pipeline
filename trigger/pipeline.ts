@@ -86,7 +86,8 @@ export const processDocumentPipeline = task({
       const executionEnv = {
         ...process.env,
         PDF_URL: payload.pdfUrl || "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
-        PDF_LOCAL_PATH: localPath || ""
+        PDF_LOCAL_PATH: localPath || "",
+        PYTHONPATH: process.cwd()
       };
 
       console.log(`Invoking pipeline runner at path: ${pythonPath}`);
@@ -105,9 +106,10 @@ export const processDocumentPipeline = task({
         : "No ANTHROPIC_API_KEY in environment. Spawning under Infisical to retrieve keys..."
       );
 
+      console.log(`Current Working Directory (cwd) is: ${process.cwd()}`);
       const child = hasApiKey
-        ? spawn(pythonPath, ["-m", "app.main"], { env: executionEnv, shell: true })
-        : spawn(infisicalBin, ["run", "--", pythonPath, "-m", "app.main"], { env: executionEnv, shell: true });
+        ? spawn(pythonPath, ["-m", "app.main"], { env: executionEnv, shell: true, cwd: process.cwd() })
+        : spawn(infisicalBin, ["run", "--", pythonPath, "-m", "app.main"], { env: executionEnv, shell: true, cwd: process.cwd() });
 
       let stdoutData = "";
       let stderrData = "";
