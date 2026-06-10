@@ -14,6 +14,7 @@ export default defineConfig({
     extensions: [
       pythonExtension({
         requirementsFile: "./requirements.txt",
+        scripts: ["app/**/*.py"],
       }),
     ],
   },

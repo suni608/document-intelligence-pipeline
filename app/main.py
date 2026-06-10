@@ -41,10 +41,10 @@ def main() -> None:
     
     try:
         # --- STAGE 01: FETCH ---
+        os.makedirs(os.path.dirname(PDF_PATH), exist_ok=True)
         if PDF_LOCAL_PATH and os.path.exists(PDF_LOCAL_PATH):
             logger.info(f"[STAGE 01] Using locally uploaded PDF from path: {PDF_LOCAL_PATH} (skipping download)")
             import shutil
-            os.makedirs(os.path.dirname(PDF_PATH), exist_ok=True)
             shutil.copy(PDF_LOCAL_PATH, PDF_PATH)
         else:
             logger.info("[STAGE 01] Fetching target source document PDF...")
