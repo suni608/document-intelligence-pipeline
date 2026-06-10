@@ -7,7 +7,7 @@
     "trigger:dev": "npx trigger.dev@latest dev"
   },
   "dependencies": {
-    "@trigger.dev/python": "^4.4.6",
+    "@trigger.dev/python": "4.4.6",
     "@trigger.dev/sdk": "4.4.6"
   },
   "devDependencies": {
