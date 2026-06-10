@@ -1,7 +1,9 @@
 {
-  "accuracy_score": 100,
-  "explanation": "Accuracy: 50/50 - All factual information in the extracted output matches the source document precisely. The title, publication date (January 2023), DOI, organizational leadership, versioning system, trustworthiness attributes, core functions, email contact, and update schedule are all accurately represented with no factual errors or mismatches. Completeness: 30/30 - All key facts, dates, and risks from the source document have been captured. The extraction includes the publication details, versioning information, the seven trustworthiness attributes, the four core functions (Govern, Map, Measure, Manage), important dates (January 2023 and 2028), and comprehensive risk categories. No significant omissions are present. No Hallucinations: 20/20 - The extracted output contains no fabricated details not present in the source document. All statements are directly supported by text from the source material, including direct quotes and accurate paraphrasing. Final Score: 50 + 30 + 20 = 100",
-  "hallucinations": [],
-  "missing_information": [],
-  "confidence": "Very High - The extraction is comprehensive, accurate, and well-supported by direct evidence from the source document. All key information has been captured without errors or fabrications."
+  "score": 95,
+  "accuracy_score": 50,
+  "completeness_score": 30,
+  "no_hallucinations_score": 15,
+  "level": "All facts supported by source",
+  "assessment": "The extracted JSON output demonstrates excellent alignment with the source document. All factual claims, dates, URLs, names, and organizational details are accurately represented with verbatim or near-verbatim evidence quotes directly from the source. The summary comprehensively captures the document's purpose, publication details, versioning system, trustworthiness attributes, core functions, and update mechanisms. The key points are well-supported with exact quotations from the source text. The important dates (January 2023 and 2028) are correctly identified. The risks listed are all explicitly mentioned or clearly derived from the source document's content structure and section headings. No hallucinations or unsupported claims were detected. The extraction successfully preserves the document's essential information while maintaining factual accuracy throughout.",
+  "deductions": []
 }

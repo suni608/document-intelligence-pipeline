@@ -112,3 +112,21 @@ In Stage 5, the auditor compares the extracted claims against the first 4000 cha
 * **Accuracy (50 pts)**: Penalizes points if the extracted evidence quotes are not found verbatim in the source text.
 * **Completeness (30 pts)**: Checks if dates, contact details, and risks are correctly cataloged.
 * **No Hallucinations (20 pts)**: Checks if the model extracted headers from the Table of Contents that do not exist in the processed text.
+
+---
+
+## 🔧 Troubleshooting & Cloud Deployment Notes
+
+### 1. Python Bundling on Trigger.dev V3
+If you deploy this task to Trigger.dev cloud, make sure that your `trigger.config.ts` includes the `scripts` option under the `pythonExtension` builder configuration:
+```typescript
+pythonExtension({
+  requirementsFile: "./requirements.txt",
+  scripts: ["app/**/*.py"], // <-- Bundles the Python package into the cloud container
+})
+```
+Without this option, Trigger.dev only copies task entrypoint files, resulting in `ModuleNotFoundError: No module named 'app'` inside the cloud runner.
+
+### 2. Working Directory & File System
+Inside containerized environments (like the Trigger.dev Cloud run context), file paths are relative to `/app`. In Stage 01, the pipeline runs `os.makedirs(os.path.dirname(PDF_PATH), exist_ok=True)` unconditionally before attempting to download or copy any PDF files. This prevents `FileNotFoundError: [Errno 2] No such file or directory: 'sample_data/sample.pdf'` during automated runs.
+
