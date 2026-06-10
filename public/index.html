@@ -1383,9 +1383,25 @@
         // Deductions
         const deductionsContainer = document.getElementById('auditDeductions');
         deductionsContainer.innerHTML = '';
-        if (verification.deductions && verification.deductions.length > 0) {
+        
+        let displayDeductions = [...(verification.deductions || [])];
+        
+        // Auto-generate fallback deductions if scores are lower than max but the deductions array is empty
+        if (displayDeductions.length === 0) {
+            if (accuracyScore < 50) {
+                displayDeductions.push(`Accuracy: Deducted ${50 - accuracyScore} point(s) from the maximum score.`);
+            }
+            if (completenessScore < 30) {
+                displayDeductions.push(`Completeness: Deducted ${30 - completenessScore} point(s) from the maximum score.`);
+            }
+            if (noHallucinationsScore < 20) {
+                displayDeductions.push(`No Hallucinations: Deducted ${20 - noHallucinationsScore} point(s) from the maximum score.`);
+            }
+        }
+        
+        if (displayDeductions.length > 0) {
             deductionsContainer.innerHTML = '<h4 style="font-size: 13px; text-transform: uppercase; color: var(--text-muted); margin-bottom: 6px; margin-top: 10px;">Deductions Detailed</h4>';
-            verification.deductions.forEach(d => {
+            displayDeductions.forEach(d => {
                 deductionsContainer.innerHTML += `<div class="deduction-item">${d}</div>`;
             });
         } else {
