@@ -35,6 +35,32 @@ function loadEnv() {
   }
 }
 
+// Helper to find the project root directory containing the app folder
+function findProjectRoot(): string {
+  let currentDir = __dirname;
+  while (currentDir !== path.parse(currentDir).root) {
+    const checkPath = path.resolve(currentDir, "app", "main.py");
+    if (fs.existsSync(checkPath)) {
+      console.log(`Found project root containing app/main.py at: ${currentDir}`);
+      return currentDir;
+    }
+    currentDir = path.dirname(currentDir);
+  }
+  
+  let cwdDir = process.cwd();
+  while (cwdDir !== path.parse(cwdDir).root) {
+    const checkPath = path.resolve(cwdDir, "app", "main.py");
+    if (fs.existsSync(checkPath)) {
+      console.log(`Found project root containing app/main.py at: ${cwdDir}`);
+      return cwdDir;
+    }
+    cwdDir = path.dirname(cwdDir);
+  }
+  
+  console.log(`Could not find project root containing app/main.py. Defaulting to process.cwd(): ${process.cwd()}`);
+  return process.cwd();
+}
+
 /**
  * Trigger.dev Background Job.
  * Ingests a payload containing either a custom pdfUrl or pdfBase64, configures env,
@@ -48,13 +74,16 @@ export const processDocumentPipeline = task({
     // Load local environment variables from .env file
     loadEnv();
     
+    // Find the project root containing the app folder
+    const projectRoot = findProjectRoot();
+    
     // Set initial progress metadata state
     metadata.set("progress", { stage: 0, message: "Pipeline initialized. Starting job..." });
 
     return new Promise((resolve, reject) => {
       // Platform detection for executing virtual environments cross-platform (Windows vs Unix)
       const isWindows = process.platform === "win32";
-      const hasVenv = fs.existsSync(path.resolve(process.cwd(), "venv"));
+      const hasVenv = fs.existsSync(path.resolve(projectRoot, "venv"));
       
       let pythonPath = "";
       const isCloud = !hasVenv || process.env.NODE_ENV === "production";
@@ -65,7 +94,7 @@ export const processDocumentPipeline = task({
       } else {
         const pythonExe = isWindows ? "python.exe" : "python";
         const venvSubfolder = isWindows ? "Scripts" : "bin";
-        pythonPath = path.resolve(process.cwd(), "venv", venvSubfolder, pythonExe);
+        pythonPath = path.resolve(projectRoot, "venv", venvSubfolder, pythonExe);
         console.log(`Running in local context. Using venv Python path: ${pythonPath}`);
       }
       
@@ -73,7 +102,7 @@ export const processDocumentPipeline = task({
       
       let localPath = "";
       if (payload.pdfBase64) {
-        const tempDir = path.resolve(process.cwd(), "sample_data");
+        const tempDir = path.resolve(projectRoot, "sample_data");
         if (!fs.existsSync(tempDir)) {
           fs.mkdirSync(tempDir, { recursive: true });
         }
@@ -87,7 +116,7 @@ export const processDocumentPipeline = task({
         ...process.env,
         PDF_URL: payload.pdfUrl || "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.100-1.pdf",
         PDF_LOCAL_PATH: localPath || "",
-        PYTHONPATH: process.cwd()
+        PYTHONPATH: projectRoot
       };
 
       console.log(`Invoking pipeline runner at path: ${pythonPath}`);
@@ -106,10 +135,11 @@ export const processDocumentPipeline = task({
         : "No ANTHROPIC_API_KEY in environment. Spawning under Infisical to retrieve keys..."
       );
 
-      console.log(`Current Working Directory (cwd) is: ${process.cwd()}`);
+      console.log(`Current Working Directory (cwd) is: ${projectRoot}`);
       const child = hasApiKey
-        ? spawn(pythonPath, ["-m", "app.main"], { env: executionEnv, shell: true, cwd: process.cwd() })
-        : spawn(infisicalBin, ["run", "--", pythonPath, "-m", "app.main"], { env: executionEnv, shell: true, cwd: process.cwd() });
+        ? spawn(pythonPath, ["-m", "app.main"], { env: executionEnv, shell: true, cwd: projectRoot })
+        : spawn(infisicalBin, ["run", "--", pythonPath, "-m", "app.main"], { env: executionEnv, shell: true, cwd: projectRoot });
+
 
       let stdoutData = "";
       let stderrData = "";
@@ -162,10 +192,10 @@ export const processDocumentPipeline = task({
         console.log("Subprocess run completed successfully. Loading generated output JSON files...");
         
         // Define paths to output files
-        const extractedPath = path.resolve(process.cwd(), "outputs", "extracted.json");
-        const verificationPath = path.resolve(process.cwd(), "outputs", "verification.json");
-        const markdownPath = path.resolve(process.cwd(), "outputs", "result.md");
-        const rawTextPath = path.resolve(process.cwd(), "outputs", "raw_text.txt");
+        const extractedPath = path.resolve(projectRoot, "outputs", "extracted.json");
+        const verificationPath = path.resolve(projectRoot, "outputs", "verification.json");
+        const markdownPath = path.resolve(projectRoot, "outputs", "result.md");
+        const rawTextPath = path.resolve(projectRoot, "outputs", "raw_text.txt");
         
         let extractedData = null;
         let verificationData = null;
