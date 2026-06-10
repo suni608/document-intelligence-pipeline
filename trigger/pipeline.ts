@@ -37,6 +37,7 @@ function loadEnv() {
 
 // Helper to find the project root directory containing the app folder
 function findProjectRoot(): string {
+  // 1. Check parent paths of __dirname
   let currentDir = __dirname;
   while (currentDir !== path.parse(currentDir).root) {
     const checkPath = path.resolve(currentDir, "app", "main.py");
@@ -47,6 +48,7 @@ function findProjectRoot(): string {
     currentDir = path.dirname(currentDir);
   }
   
+  // 2. Check parent paths of process.cwd()
   let cwdDir = process.cwd();
   while (cwdDir !== path.parse(cwdDir).root) {
     const checkPath = path.resolve(cwdDir, "app", "main.py");
@@ -55,6 +57,48 @@ function findProjectRoot(): string {
       return cwdDir;
     }
     cwdDir = path.dirname(cwdDir);
+  }
+
+  // 3. Fallback: Search recursively under process.cwd() to locate app/main.py
+  console.log("Direct checks failed. Initiating recursive directory search for app/main.py...");
+  
+  function findAppFolderRecursive(dir: string, depth = 0): string | null {
+    if (depth > 5) return null;
+    const checkPath = path.resolve(dir, "app", "main.py");
+    if (fs.existsSync(checkPath)) {
+      return dir;
+    }
+    
+    try {
+      const files = fs.readdirSync(dir);
+      for (const file of files) {
+        const fullPath = path.resolve(dir, file);
+        // Skip common large or system directories to remain fast
+        if (
+          file === "node_modules" || 
+          file === "AppData" || 
+          file === ".git" || 
+          file === ".trigger" || 
+          file === "venv" ||
+          file === ".gemini"
+        ) {
+          continue;
+        }
+        if (fs.statSync(fullPath).isDirectory()) {
+          const found = findAppFolderRecursive(fullPath, depth + 1);
+          if (found) return found;
+        }
+      }
+    } catch (e) {
+      // Ignore read errors
+    }
+    return null;
+  }
+
+  const foundRoot = findAppFolderRecursive(process.cwd());
+  if (foundRoot) {
+    console.log(`Found project root containing app/main.py recursively at: ${foundRoot}`);
+    return foundRoot;
   }
   
   console.log(`Could not find project root containing app/main.py. Defaulting to process.cwd(): ${process.cwd()}`);
