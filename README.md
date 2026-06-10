@@ -20,6 +20,8 @@ Here is a diagram showing the 5 stages of the pipeline and the tools used:
 4. **Stage 4 (Publish)**: Translates the structured JSON into a publication-ready Markdown page.
 5. **Stage 5 (Verify)**: Performs a self-verification audit comparison against the source text using an LLM auditor, giving an accuracy score out of 100.
 
+* **💬 Document Q&A Chatbot**: Once the pipeline runs successfully, the raw extracted text is cached locally. The web app includes an interactive chatbot tab that allows you to ask questions about the document in real time. The serverless handler (`api/chat.ts`) sends your question and the document context directly to Claude, delivering instant, verified answers.
+
 ---
 
 ## 🚀 How to Set Up and Run Locally
