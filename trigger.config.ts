@@ -1,4 +1,5 @@
 import { defineConfig } from "@trigger.dev/sdk/v3";
+import { pythonExtension } from "@trigger.dev/python/extension";
 
 export default defineConfig({
   // Your actual Trigger.dev project ID from the dashboard
@@ -9,6 +10,13 @@ export default defineConfig({
   dirs: ["trigger"],
   // Max duration (in seconds) that any run is allowed to execute for
   maxDuration: 300,
+  build: {
+    extensions: [
+      pythonExtension({
+        requirementsFile: "./requirements.txt",
+      }),
+    ],
+  },
 });
 
 

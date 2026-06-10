@@ -54,12 +54,22 @@ export const processDocumentPipeline = task({
     return new Promise((resolve, reject) => {
       // Platform detection for executing virtual environments cross-platform (Windows vs Unix)
       const isWindows = process.platform === "win32";
+      const hasVenv = fs.existsSync(path.resolve(process.cwd(), "venv"));
       
-      const pythonExe = isWindows ? "python.exe" : "python";
-      const venvSubfolder = isWindows ? "Scripts" : "bin";
+      let pythonPath = "";
+      const isCloud = !hasVenv || process.env.NODE_ENV === "production";
+      
+      if (isCloud) {
+        pythonPath = isWindows ? "python" : "python3";
+        console.log(`Running in cloud context. Using global Python executable: ${pythonPath}`);
+      } else {
+        const pythonExe = isWindows ? "python.exe" : "python";
+        const venvSubfolder = isWindows ? "Scripts" : "bin";
+        pythonPath = path.resolve(process.cwd(), "venv", venvSubfolder, pythonExe);
+        console.log(`Running in local context. Using venv Python path: ${pythonPath}`);
+      }
+      
       const infisicalBin = isWindows ? "infisical.cmd" : "infisical";
-      
-      const pythonPath = path.resolve(process.cwd(), "venv", venvSubfolder, pythonExe);
       
       let localPath = "";
       if (payload.pdfBase64) {
@@ -86,11 +96,12 @@ export const processDocumentPipeline = task({
         console.log(`Processing URL target: ${executionEnv.PDF_URL}`);
       }
 
-      // Determine if we should bypass Infisical (e.g. if ANTHROPIC_API_KEY is already present in environment)
-      const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
+      // Determine if we should bypass Infisical
+      // Bypassed if ANTHROPIC_API_KEY is present in environment OR if we are running in the cloud
+      const hasApiKey = !!process.env.ANTHROPIC_API_KEY || isCloud;
 
       console.log(hasApiKey 
-        ? "ANTHROPIC_API_KEY detected in environment. Running python script directly (bypassing Infisical)..."
+        ? "Bypassing Infisical execution (API Key is present or running in cloud context)..."
         : "No ANTHROPIC_API_KEY in environment. Spawning under Infisical to retrieve keys..."
       );
 
