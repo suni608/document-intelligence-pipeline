@@ -136,6 +136,19 @@ export const processDocumentPipeline = task({
       );
 
       console.log(`Current Working Directory (cwd) is: ${projectRoot}`);
+      if (fs.existsSync(projectRoot)) {
+        try {
+          console.log("Files in projectRoot:", fs.readdirSync(projectRoot));
+          const appPath = path.resolve(projectRoot, "app");
+          if (fs.existsSync(appPath)) {
+            console.log("app folder exists! Files in app folder:", fs.readdirSync(appPath));
+          } else {
+            console.error("app folder DOES NOT EXIST in projectRoot!");
+          }
+        } catch (dirError) {
+          console.error("Failed to read directories:", dirError);
+        }
+      }
       const child = hasApiKey
         ? spawn(pythonPath, ["-m", "app.main"], { env: executionEnv, shell: true, cwd: projectRoot })
         : spawn(infisicalBin, ["run", "--", pythonPath, "-m", "app.main"], { env: executionEnv, shell: true, cwd: projectRoot });
